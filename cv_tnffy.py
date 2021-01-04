@@ -461,13 +461,17 @@ class sizer(Bwindow):
         self.add_lbdown( 'h+' , hsizech )
         self.add_lbdown( 'h-' , hsizech )
         
+        #lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        lorem = 'Yume Nijino Hime Shiratori Elza Forte Mahiru Kasumi Ako Saotome Laura Sakuraba Yozora Kasumi'
+        texts = lorem.split(' ')
         def addb(self,b):
             w = b.w
             h = b.h
             pw = int(w/ self.w*10)
             ph = int(h/ self.w*10)
             
-            text = 'new B'
+            text = texts.pop()
+            #text = 'new B'
             self.addB(5,5,pw,ph,text)
             self.add_lbdbl( text , prtxy )
         self.add_lbdown( 'add B', addb )
