@@ -56,7 +56,7 @@ class Bwindow():
         cv2.namedWindow(winname,cv2.WINDOW_NORMAL)
         cv2.resizeWindow(winname,w,h)
         cv2.setMouseCallback(winname, self.mousehandle)
-
+        
     #----------------- event listner
     
 
@@ -451,12 +451,18 @@ class sizer(Bwindow):
         def wsizech(self,b):
             B = self.Bfind('add B')
             B.w += b.value
+            w = abs(B.w/b.value)
+            h = abs(B.h/b.value)
+            B.text = "{},{}".format(w,h)
         self.add_lbdown( 'w+' , wsizech )
         self.add_lbdown( 'w-' , wsizech )
 
         def hsizech(self,b):
             B = self.Bfind('add B')
             B.h += b.value
+            w = abs(B.w/b.value)
+            h = abs(B.h/b.value)
+            B.text = "{},{}".format(w,h)
         self.add_lbdown( 'h+' , hsizech )
         self.add_lbdown( 'h-' , hsizech )
 
@@ -547,7 +553,7 @@ class painter(Bwindow):
                 B.pressed = False
             b.pressed = True
         self.Bexlist=[]
-        for text in ['Er','Br','Ne']:
+        for text in ['Er','Br','Ne','Ac']:
             B = self.Bfind(text)
             self.Bexlist.append(B)
             self.add_lbdown( text , selectb )
@@ -581,10 +587,10 @@ if __name__ =='__main__':
     #print(a.run())
     #a=manyB()
     #print(a.run())
-    a=sizer()
+    #a=sizer()
+    #a.run()
+    a=painter()
+    impath = 'seno.jpg'
+    img = a.img_read(impath)
+    a.backimg(img)
     a.run()
-#     a=painter()
-#     impath = 'seno.jpg'
-#     img = a.img_read(impath)
-#     a.backimg(img)
-#     a.run()
