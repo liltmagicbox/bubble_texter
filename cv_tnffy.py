@@ -67,7 +67,8 @@ class Bwindow():
             self.LBUTTONUP(event, x,y, flags, param)
         elif event == cv2.EVENT_LBUTTONDBLCLK:
             self.LBUTTONDBLCLK(event, x,y, flags, param)
-
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.RBUTTONDOWN(event, x,y, flags, param)
 
     def LBUTTONDOWN(self,event, x,y, flags, param):
         for B in self.Blist:
@@ -85,6 +86,9 @@ class Bwindow():
     def LBUTTONDBLCLK(self,event, x,y, flags, param):
         False
         self.LBUTTONDBLCLK_post(x,y)
+    def RBUTTONDOWN(self,event, x,y, flags, param):
+        False
+        self.RBUTTONDOWN_post(x,y)
 
     #those for just use x,y. simply.
     def LBUTTONDOWN_post(self,x,y):
@@ -95,7 +99,8 @@ class Bwindow():
         0
     def LBUTTONDBLCLK_post(self,x,y):
         0
-
+    def RBUTTONDOWN_post(self,x,y):
+        0
     #abstracted add-func-function. works great!
     def add_lbdown(self,text,func):
         LBUTTONDOWN_tmp = self.LBUTTONDOWN_post
@@ -129,7 +134,14 @@ class Bwindow():
                 if B.coll(x,y) and B.text == text:
                     func(self,B)
         self.LBUTTONDBLCLK_post = LBUTTONDBLCLK_new
-
+    def add_rbdown(self,text,func):
+        RBUTTONDOWN_tmp = self.RBUTTONDOWN_post
+        def RBUTTONDOWN_new(x,y):
+            RBUTTONDOWN_tmp(x,y)
+            for B in self.Blist:
+                if B.coll(x,y) and B.text == text:
+                    func(self,B)
+        self.RBUTTONDOWN_post = RBUTTONDOWN_new
 
     #-----------global event, not button
     #orignal move event. compared hover.
@@ -155,12 +167,15 @@ class Bwindow():
         return cv2.waitKey(ms) & 0xFF
     def img_show(self,img):
         cv2.imshow( self.winname, img)
+    def img_read(self,impath):
+        return cv2.imread(impath)
     def img_resize(self,img,size):
         return cv2.resize(img, size, interpolation = cv2.INTER_LINEAR)
     def img_cover(self,big,small,a,b):
         bh,bw,bd = big.shape
         sh,sw,sd = small.shape
         if bh<sh or bw<sw or bd!=sd:
+            print('cover bigger than img !')
             return big
         #for safe cause. simple,fine.
         x1,y1 = a
@@ -220,7 +235,7 @@ class Bwindow():
         x = int(iw/10*px)
         y = int(ih/10*py)
         w = int(iw/10*pw)
-        h = int(ih/10*ph)
+        h = int(iw/10*ph)# 1:1 scale is fine..
         a = int(x-w/2), int(y-h/2)
         b = int(x+w/2), int(y+h/2)
 
@@ -336,6 +351,8 @@ class Bwindow():
 class tnf(Bwindow):
     def __init__(self,message='yes or no'):
         Bwindow.__init__(self)#self means activated assigned live class object.
+        self.winname = message #or overwrite window..
+        
         #Bwindow.addB(self,2,5,2,1,text = 'no',value=False, hold = True)
         self.addB(2,5,2,1,text = 'no',value=False)
         self.addB(8,5,2,1,text = 'yes',value =True)
@@ -412,43 +429,21 @@ class manyB(Bwindow):#just an example of hold, event function and return list. u
                     self.return_var.append(B.value)
         self.add_loopstop(addlistvar)
 #------------and more 1 line!
-
+#self.B(x,y,w,h,text,value,hold,color,thick,nocoll)
 class sizer(Bwindow):
     def __init__(self):
         Bwindow.__init__(self, 600,900)
-        s = 1.5
-        self.addB(3,1,s,s,text = 'Erase')
-        self.addB(5,1,s,s,text = 'Neon')
-        self.addB(7,1,s,s,text = 'brush')
-        
-        s=1
-        uu = int(self.w/10)
-        self.addB(7.9,8.6,s,s,text = 'w-', value = -uu,)
-        self.addB(4.5,8.9,s,s,text = 'add B')
-        self.addB(9.2,8.6,s,s,text = 'w+', value = uu, )
-        
-        self.addB(7.9,9.4,s,s,text = 'h-', value = -uu,)
-        self.addB(9.2,9.4,s,s,text = 'h+', value = uu, )
-        
-        for B in self.Blist:
-            B.fixed = True
-        def buttonmove(self,x,y):
-            for B in self.Blist:
-                if B.pressed and B.coll(x,y):
-                    if not 'fixed' in dir(B):
-                        B.x = x
-                        B.y = y
-        self.add_mmove( buttonmove )
-        
-        def prtxy(self,b):
-            px = str(b.x/ self.w*10)[:3]
-            py = str(b.y/ self.h*10)[:3]
-            print( px,py )
-        for B in self.Blist:
-            self.add_lbdbl( B.text , prtxy )
-        
         
         #make----------sizer
+        s=1
+        uu = int(self.w/10)
+        self.addB(8, 8.7,s,s,text = 'w-', value = -uu,)
+        self.addB(9.2, 8.7,s,s,text = 'w+', value = uu, )        
+        self.addB(8, 9.5,s,s,text = 'h-', value = -uu,)
+        self.addB(9.2, 9.5,s,s,text = 'h+', value = uu, )
+        
+        self.addB(2,9,s,s,text = 'add B')        
+        
         def wsizech(self,b):
             B = self.Bfind('add B')
             B.w += b.value            
@@ -460,6 +455,31 @@ class sizer(Bwindow):
             B.h += b.value
         self.add_lbdown( 'h+' , hsizech )
         self.add_lbdown( 'h-' , hsizech )
+        
+        
+        #---------default buttons, fix button move. 
+        for B in self.Blist:
+            B.fixed = True
+        def buttonmove(self,x,y):
+            for B in self.Blist:
+                if B.pressed and B.coll(x,y):
+                    if not 'fixed' in dir(B):
+                        B.x = x
+                        B.y = y
+        self.add_mmove( buttonmove )
+        
+        #---------- double click if want to see px,py.
+        def prtxy(self,b):
+            px = str(b.x/ self.w*10)[:3]
+            py = str(b.y/ self.h*10)[:3]
+            print( px,py )
+        for B in self.Blist:
+            self.add_lbdbl( B.text , prtxy )
+        
+        
+        
+        
+        #-----------add del button
         
         #lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         lorem = 'Yume Nijino Hime Shiratori Elza Forte Mahiru Kasumi Ako Saotome Laura Sakuraba Yozora Kasumi'
@@ -474,47 +494,98 @@ class sizer(Bwindow):
             #text = 'new B'
             self.addB(5,5,pw,ph,text)
             self.add_lbdbl( text , prtxy )
+            self.add_rbdown( text , delb )
         self.add_lbdown( 'add B', addb )
+        
+        def delb(self,b):
+            for B in self.Blist:
+                if B==b:                    
+                    self.Blist.pop(self.Blist.index(B))
+
+        
 
 class painter(Bwindow):
     def __init__(self):
-        Bwindow.__init__(self)
-
+        Bwindow.__init__(self,400,700)
+        
+        #---------top buttons
+        s = 1
+        roof = 0.35
+        
+        self.addB(0.5,roof,s,s,text = 'X',color = (0,0,255))
+        def escape(self,b):
+            t = tnf('save and exit?')
+            if t.run():# returns t/f
+                print('ha')
+                #self.saveall()
+        self.add_lbdown('X', escape)
+        
+        
+        
+        self.addB(9, roof,s,s,text = '<')
+        
+        #-------------page selecter
+        s = 0.7
+        self.addB(6, roof,s,s,text = '-')
+        self.addB(7, roof,s,s,text = '+')        
+        
+        
+        
+        
+        
+        #-------------brush selecter.
+        s = 1
+        self.addB(2,roof,s,s,text = 'Er', hold = True)        
+        self.addB(3,roof,s,s,text = 'Br', hold = True)
+        self.addB(4,roof,s,s,text = 'Ne', hold = True)
+        self.addB(5,roof,s,s,text = 'Ac', hold = True)
+        
+        #--exclusive button select. works fine..
+        def selectb(self,b):
+            for B in self.Bexlist:
+                B.pressed = False
+            b.pressed = True
+        self.Bexlist=[]
+        for text in ['Er','Br','Ne']:
+            B = self.Bfind(text)
+            self.Bexlist.append(B)
+            self.add_lbdown( text , selectb )
+        
+        
+        #----------------
+        self.eraser_points = []
         self.brush_points = []
-
-        #self.addB(2,5,2,1,text = 'brush+',value=1, hold = True)
-        self.addB(2,5,2,1,text = 'brush+')
-        self.addB(2,7,2,1,text = 'brush-')
-
-        self.addB(8,5,2,1,text = 'color', hold = False,)
-        self.addB(0.5,0.7,0.7,0.7,text = 'x', color = (0,150,255), )
-
+        self.neon_points = []
+        
+        
+    def backimg(self,img):        
+        px,py = 5,5.3
+        pw,ph = 9,13
+        self.background(img,px,py,pw,ph)
+        
         #self.add_mmove( lambda self,x,y: print(x,y) )
 
+#         def addlistvar(self):
+#             for B in self.Blist:
+#                 if B.pressed:
+#                     self.return_var.append(B.value)
+#         self.add_loopstop(addlistvar)
 
-        def rcolor(self,button):#this self is not upper self. means just 2 args.
-            #print(self.return_var)
-            r=np.random.random()*255
-            g=np.random.random()*255
-            b=np.random.random()*255
-            button.color = r,g,b
-        self.add_lbdown("randomcolor",rcolor)
-
-        self.add_lbdown("x",lambda s,b: s.loopstop() )
-
-        def addlistvar(self):
-            for B in self.Blist:
-                if B.pressed:
-                    self.return_var.append(B.value)
-        self.add_loopstop(addlistvar)
-
-
+        # 0.8,1.2
+        # 9.2,1.2
+        # 0.8,7.8
+        # 9.2,7.8
 if __name__ =='__main__':
     #a=tnf()
     #print(a.run())
     #a=manyB()
     #print(a.run())
-    a=sizer()
+    #a=sizer()
+    #a.run()
+    a=painter()
+    impath = 'seno.jpg'
+    img = a.img_read(impath)
+    a.backimg(img)
     a.run()
 
 # if __name__ =='__main__':
