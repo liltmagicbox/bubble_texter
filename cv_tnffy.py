@@ -102,44 +102,44 @@ class Bwindow():
     def RBUTTONDOWN_post(self,x,y):
         0
     #abstracted add-func-function. works great!
-    def add_lbdown(self,text,func):
+    def add_lbdown(self,name,func):
         LBUTTONDOWN_tmp = self.LBUTTONDOWN_post
         def LBUTTONDOWN_new(x,y):
             LBUTTONDOWN_tmp(x,y)
             for B in self.Blist:
-                if B.coll(x,y) and B.text == text:
+                if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.LBUTTONDOWN_post = LBUTTONDOWN_new
-    def add_mhover(self,text,func):#note, it's hover, when cursor on button..
+    def add_mhover(self,name,func):#note, it's hover, when cursor on button..
         MOUSEMOVE_tmp = self.MOUSEMOVE_post
         def MOUSEMOVE_new(x,y):
             MOUSEMOVE_tmp(x,y)
             for B in self.Blist:
-                if B.coll(x,y) and B.text == text:
+                if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.MOUSEMOVE_post = MOUSEMOVE_new
-    def add_lbup(self,text,func):
+    def add_lbup(self,name,func):
         LBUTTONUP_tmp = self.LBUTTONUP_post
         def LBUTTONUP_new(x,y):
             LBUTTONUP_tmp(x,y)
             for B in self.Blist:
-                if B.coll(x,y) and B.text == text:
+                if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.LBUTTONUP_post = LBUTTONUP_new
-    def add_lbdbl(self,text,func):
+    def add_lbdbl(self,name,func):
         LBUTTONDBLCLK_tmp = self.LBUTTONDBLCLK_post
         def LBUTTONDBLCLK_new(x,y):
             LBUTTONDBLCLK_tmp(x,y)
             for B in self.Blist:
-                if B.coll(x,y) and B.text == text:
+                if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.LBUTTONDBLCLK_post = LBUTTONDBLCLK_new
-    def add_rbdown(self,text,func):
+    def add_rbdown(self,name,func):
         RBUTTONDOWN_tmp = self.RBUTTONDOWN_post
         def RBUTTONDOWN_new(x,y):
             RBUTTONDOWN_tmp(x,y)
             for B in self.Blist:
-                if B.coll(x,y) and B.text == text:
+                if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.RBUTTONDOWN_post = RBUTTONDOWN_new
 
@@ -180,7 +180,6 @@ class Bwindow():
         #for safe cause. simple,fine.
         x1,y1 = a
         x2,y2 = b
-        print(a,b)
         try:
             big[ y1:y2, x1:x2, :] = small
         except:
@@ -248,30 +247,31 @@ class Bwindow():
 
 
     #------------------------button feature
-    def Bfind(self,text):
+    def Bfind(self,name):
         for B in self.Blist:
-            if B.text == text:
+            if B.name == name:
                 return B
-    
-    def addB(self, px,py,bw=1,bh=1,text ='button',value=None,hold = False,color=(255,255,0),thick=5,nocoll=False):
+    def addB(self, px,py,bw=1,bh=1,text ='button',name=None,value=None,hold = False,color=(255,255,0),thick=5,nocoll=False):
+        if name == None:
+            name = text#for fast addB.
         ih,iw = self.img_shape(self.img)[:2]
         x = int(iw/10*px)
         y = int(ih/10*py)
         w = int(iw/10*bw)
         h = int(iw/10*bh)# for 1:1 rect.
-        newB = self.B(x,y,w,h,text,value,hold,color,thick,nocoll)
+        newB = self.B(x,y,w,h,text,name,value,hold,color,thick,nocoll)
         self.Blist.append( newB )
     def drawB(self,img):
         for B in self.Blist:
             B.draw(img)
 
     class B():
-        def __init__(self,x,y,w,h,text,value,hold,color,thick, nocoll):
+        def __init__(self,x,y,w,h,text,name,value,hold,color,thick, nocoll):
             self.x = x
             self.y = y
             self.w = w
             self.h = h
-            
+
             #for x,y move
 #             a = int(x-w/2), int(y-h/2)
 #             b = int(x+w/2), int(y+h/2)
@@ -281,6 +281,7 @@ class Bwindow():
             self.thick = thick
 
             self.text = text
+            self.name = name
             self.value = value
             self.text_color = (255,0,255)
             self.text_thick = 2
@@ -289,11 +290,12 @@ class Bwindow():
             self.over = False
             self.hold = hold
             self.nocoll = nocoll
+
         def put_rect(self,img, a,b,color,thick):
             cv2.rectangle(img, a,b,color,thick)
         def put_text(self, img,text,textpos,font,size,color,thick,lineaa):
             cv2.putText(img,text,textpos,font,size,color,thick,lineaa)
-        
+
         def getab(self):
             x = self.x
             y = self.y
@@ -302,7 +304,7 @@ class Bwindow():
             a = int(x-w/2), int(y-h/2)
             b = int(x+w/2), int(y+h/2)
             return a,b
-        
+
         def draw(self, img):
             #----button shape
             a,b = self.getab()
@@ -352,7 +354,7 @@ class tnf(Bwindow):
     def __init__(self,message='yes or no'):
         Bwindow.__init__(self)#self means activated assigned live class object.
         self.winname = message #or overwrite window..
-        
+
         #Bwindow.addB(self,2,5,2,1,text = 'no',value=False, hold = True)
         self.addB(2,5,2,1,text = 'no',value=False)
         self.addB(8,5,2,1,text = 'yes',value =True)
@@ -433,31 +435,31 @@ class manyB(Bwindow):#just an example of hold, event function and return list. u
 class sizer(Bwindow):
     def __init__(self):
         Bwindow.__init__(self, 600,900)
-        
+
         #make----------sizer
         s=1
         uu = int(self.w/10)
         self.addB(8, 8.7,s,s,text = 'w-', value = -uu,)
-        self.addB(9.2, 8.7,s,s,text = 'w+', value = uu, )        
+        self.addB(9.2, 8.7,s,s,text = 'w+', value = uu, )
         self.addB(8, 9.5,s,s,text = 'h-', value = -uu,)
         self.addB(9.2, 9.5,s,s,text = 'h+', value = uu, )
-        
-        self.addB(2,9,s,s,text = 'add B')        
-        
+
+        self.addB(2,9,s,s,text = 'add B')
+
         def wsizech(self,b):
             B = self.Bfind('add B')
-            B.w += b.value            
+            B.w += b.value
         self.add_lbdown( 'w+' , wsizech )
         self.add_lbdown( 'w-' , wsizech )
-        
-        def hsizech(self,b):            
+
+        def hsizech(self,b):
             B = self.Bfind('add B')
             B.h += b.value
         self.add_lbdown( 'h+' , hsizech )
         self.add_lbdown( 'h-' , hsizech )
-        
-        
-        #---------default buttons, fix button move. 
+
+
+        #---------default buttons, fix button move.
         for B in self.Blist:
             B.fixed = True
         def buttonmove(self,x,y):
@@ -467,7 +469,7 @@ class sizer(Bwindow):
                         B.x = x
                         B.y = y
         self.add_mmove( buttonmove )
-        
+
         #---------- double click if want to see px,py.
         def prtxy(self,b):
             px = str(b.x/ self.w*10)[:3]
@@ -475,12 +477,12 @@ class sizer(Bwindow):
             print( px,py )
         for B in self.Blist:
             self.add_lbdbl( B.text , prtxy )
-        
-        
-        
-        
+
+
+
+
         #-----------add del button
-        
+
         #lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         lorem = 'Yume Nijino Hime Shiratori Elza Forte Mahiru Kasumi Ako Saotome Laura Sakuraba Yozora Kasumi'
         texts = lorem.split(' ')
@@ -489,29 +491,29 @@ class sizer(Bwindow):
             h = b.h
             pw = int(w/ self.w*10)
             ph = int(h/ self.w*10)
-            
+
             text = texts.pop()
             #text = 'new B'
             self.addB(5,5,pw,ph,text)
             self.add_lbdbl( text , prtxy )
             self.add_rbdown( text , delb )
         self.add_lbdown( 'add B', addb )
-        
+
         def delb(self,b):
             for B in self.Blist:
-                if B==b:                    
+                if B==b:
                     self.Blist.pop(self.Blist.index(B))
 
-        
+
 
 class painter(Bwindow):
     def __init__(self):
         Bwindow.__init__(self,400,700)
-        
+
         #---------top buttons
         s = 1
         roof = 0.35
-        
+
         self.addB(0.5,roof,s,s,text = 'X',color = (0,0,255))
         def escape(self,b):
             t = tnf('save and exit?')
@@ -519,27 +521,27 @@ class painter(Bwindow):
                 print('ha')
                 #self.saveall()
         self.add_lbdown('X', escape)
-        
-        
-        
+
+
+
         self.addB(9, roof,s,s,text = '<')
-        
+
         #-------------page selecter
         s = 0.7
         self.addB(6, roof,s,s,text = '-')
-        self.addB(7, roof,s,s,text = '+')        
-        
-        
-        
-        
-        
+        self.addB(7, roof,s,s,text = '+')
+
+
+
+
+
         #-------------brush selecter.
         s = 1
-        self.addB(2,roof,s,s,text = 'Er', hold = True)        
+        self.addB(2,roof,s,s,text = 'Er', hold = True)
         self.addB(3,roof,s,s,text = 'Br', hold = True)
         self.addB(4,roof,s,s,text = 'Ne', hold = True)
         self.addB(5,roof,s,s,text = 'Ac', hold = True)
-        
+
         #--exclusive button select. works fine..
         def selectb(self,b):
             for B in self.Bexlist:
@@ -550,19 +552,19 @@ class painter(Bwindow):
             B = self.Bfind(text)
             self.Bexlist.append(B)
             self.add_lbdown( text , selectb )
-        
-        
+
+
         #----------------
         self.eraser_points = []
         self.brush_points = []
         self.neon_points = []
-        
-        
-    def backimg(self,img):        
+
+
+    def backimg(self,img):
         px,py = 5,5.3
         pw,ph = 9,13
         self.background(img,px,py,pw,ph)
-        
+
         #self.add_mmove( lambda self,x,y: print(x,y) )
 
 #         def addlistvar(self):
