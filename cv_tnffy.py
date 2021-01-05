@@ -115,7 +115,7 @@ class Bwindow():
                 if B.coll(x,y) and B.name == name:
                     func(self,B)
         self.LBUTTONDOWN_post = LBUTTONDOWN_new
-    def add_mhover(self,name,func):#note, it's hover, when cursor on button..
+    def add_hover(self,name,func):#note, it's hover, when cursor on button..
         MOUSEMOVE_tmp = self.MOUSEMOVE_post
         def MOUSEMOVE_new(x,y):
             MOUSEMOVE_tmp(x,y)
@@ -163,6 +163,13 @@ class Bwindow():
             loopstop_tmp()
             func(self)
         self.loopstop = loopstop_new
+    
+    def add_loop(self,func):
+        loopstop_tmp = self.loopstop
+        def loopstop_new():
+            loopstop_tmp()
+            func(self)
+        self.loopstop = loopstop_new
     #----------------- event listner
 
 
@@ -201,19 +208,27 @@ class Bwindow():
         return cv2.getWindowProperty(self.winname, 0) ==-1
     def window_destroy(self):
         cv2.destroyWindow(self.winname)
-
+    
+    def put_circle(self,cord,radius,color,thick):
+        cv2.circle(img,cord,radius,color,thick)
+            
+            
     def fpsreset(self):
         self.fps = 30
     def loop(self):
         while self.looper:
+            #---if window closed, break all.
             if self.window_alive():
                 self.loopstop()
                 break
-
+            
+            #---main dealer.
             img = self.img_copy()
             self.drawB(img)
             self.img_show(img)
-
+            self.onloop()
+            
+            #---wait fps manager.
             if self.fps>1:
                 self.fps -= 0.3
             sleepms = int(1000/self.fps)
@@ -224,10 +239,11 @@ class Bwindow():
 
         self.window_destroy()
 
-    def postloop(self):
+    def onloop(self):#can be added via add_onloop.
+        0
+    def postloop(self): #can be added via ...?
         return self.return_var
-
-    def loopstop(self):
+    def loopstop(self): #can be added via add_loopstop.
         self.looper = False
 
 
@@ -298,11 +314,12 @@ class Bwindow():
             self.fixed = fixed
 
 
+        
         def put_rect(self,img, a,b,color,thick):
             cv2.rectangle(img, a,b,color,thick)
         def put_text(self, img,text,textpos,font,size,color,thick,lineaa):
             cv2.putText(img,text,textpos,font,size,color,thick,lineaa)
-
+        
         def getab(self):
             x = self.x
             y = self.y
@@ -434,7 +451,7 @@ class manyB(Bwindow):#just an example of hold, event function and return list. u
         self.add_loopstop(addlistvar)
 #------------and more 1 line!
 #self.B(x,y,w,h,text,value,hold,color,thick,nocoll)
-class sizer(Bwindow):
+class sizer(Bwindow):    
     def __init__(self):
         Bwindow.__init__(self, 600,900)
 
@@ -514,7 +531,7 @@ class sizer(Bwindow):
 class painter(Bwindow):
     def __init__(self):
         Bwindow.__init__(self,400,700)
-
+        
         #---------top buttons
         s = 1
         roof = 0.35
@@ -531,15 +548,6 @@ class painter(Bwindow):
 
         self.addB(9, roof,s,s,text = '<')
 
-        #-------------page selecter
-        s = 0.7
-        self.addB(6, roof,s,s,text = '-')
-        self.addB(7, roof,s,s,text = '+')
-
-
-
-
-
         #-------------brush selecter.
         s = 1
         self.addB(2,roof,s,s,text = 'Er', hold = True)
@@ -552,13 +560,49 @@ class painter(Bwindow):
             for B in self.Bexlist:
                 B.pressed = False
             b.pressed = True
-        self.Bexlist=[]
+            self.brush_selected = b.Name
+        self.Bexlist=[]        
         for text in ['Er','Br','Ne','Ac']:
             B = self.Bfind(text)
             self.Bexlist.append(B)
             self.add_lbdown( text , selectb )
 
 
+        #-------------brush sizer        
+        self.brush = self.brushmaker()
+        
+        s = 1
+        roof2 = roof+0.7
+        self.addB(2, roof2,s,s,text = '5', name = 'brushsize')
+        self.addB(3, roof2,s,s,text = '-', name = 'brush--', value = -1)
+        self.addB(4, roof2,s,s,text = '+', name = 'brush++', value = +1)
+        def changebrushsize( self,b):
+            self.brush.size += b.value
+            B = self.Bfind('brushsize')
+            B.text = str(self.brush.size)
+        self.add_lbdown( 'brush--' , changebrushsize )
+        self.add_lbdown( 'brush++' , changebrushsize )
+        
+        def changebrushsizehover( self,b):
+            if b.pressed:
+                self.brush.size += b.value
+                B = self.Bfind('brushsize')
+                B.text = str(self.brush.size)
+        self.add_hover( 'brush--' , changebrushsizehover )
+        self.add_hover( 'brush++' , changebrushsizehover )
+        
+        #-------------brush mover
+        def brushfollowsmouse(self,x,y):
+            self.brush.x = x
+            self.brush.y = y            
+        self.add_mmove( brushfollowsmouse )
+        
+        def brushshowup(self,x,y):
+            self.brush.x = x
+            self.brush.y = y            
+        self.add_mmove( brushshowup )
+        self.put_circle(cord,radius,color,thick)
+        
         #----------------
         self.eraser_points = []
         self.brush_points = []
@@ -578,10 +622,15 @@ class painter(Bwindow):
 #                     self.return_var.append(B.value)
 #         self.add_loopstop(addlistvar)
 
-        # 0.8,1.2
-        # 9.2,1.2
-        # 0.8,7.8
-        # 9.2,7.8
+    class brushmaker():
+        def __init__(self):        
+            self.size = 5
+            self.x = 0
+            self.y = 0
+            self.mode = 0 #or None or "none"...
+            self.pressed = False
+            
+
 if __name__ =='__main__':
     #a=tnf()
     #print(a.run())
