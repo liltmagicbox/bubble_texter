@@ -58,6 +58,8 @@ class Bwindow():
         cv2.setMouseCallback(winname, self.mousehandle)
 
     #----------------- event listner
+    
+
     def mousehandle(self,event, x,y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             self.LBUTTONDOWN(event, x,y, flags, param)
@@ -72,16 +74,19 @@ class Bwindow():
 
     def LBUTTONDOWN(self,event, x,y, flags, param):
         for B in self.Blist:
-            B.click(x,y)
+            if B.coll(x,y):
+                B.pressed = not B.pressed
         self.LBUTTONDOWN_post(x,y)
     def MOUSEMOVE(self,event, x,y, flags, param):
         self.fpsreset()
         for B in self.Blist:
-            B.move(x,y)
+            B.hover = B.coll(x,y)
         self.MOUSEMOVE_post(x,y)
     def LBUTTONUP(self,event, x,y, flags, param):
         for B in self.Blist:
-            B.unclick(x,y)
+            if B.coll(x,y):
+                if not B.hold:
+                    B.pressed = False
         self.LBUTTONUP_post(x,y)
     def LBUTTONDBLCLK(self,event, x,y, flags, param):
         False
@@ -251,7 +256,7 @@ class Bwindow():
         for B in self.Blist:
             if B.name == name:
                 return B
-    def addB(self, px,py,bw=1,bh=1,text ='button',name=None,value=None,hold = False,color=(255,255,0),thick=5,nocoll=False):
+    def addB(self, px,py,bw=1,bh=1,text ='button',name=None,value=None,hold = False,color=(255,255,0),thick=5,nocoll=False, fixed = True):
         if name == None:
             name = text#for fast addB.
         ih,iw = self.img_shape(self.img)[:2]
@@ -259,14 +264,14 @@ class Bwindow():
         y = int(ih/10*py)
         w = int(iw/10*bw)
         h = int(iw/10*bh)# for 1:1 rect.
-        newB = self.B(x,y,w,h,text,name,value,hold,color,thick,nocoll)
+        newB = self.B(x,y,w,h,text,name,value,hold,color,thick,nocoll,fixed)
         self.Blist.append( newB )
     def drawB(self,img):
         for B in self.Blist:
             B.draw(img)
 
     class B():
-        def __init__(self,x,y,w,h,text,name,value,hold,color,thick, nocoll):
+        def __init__(self,x,y,w,h,text,name,value,hold,color,thick, nocoll,fixed):
             self.x = x
             self.y = y
             self.w = w
@@ -287,9 +292,11 @@ class Bwindow():
             self.text_thick = 2
 
             self.pressed = False
-            self.over = False
+            self.hover = False
             self.hold = hold
             self.nocoll = nocoll
+            self.fixed = fixed
+
 
         def put_rect(self,img, a,b,color,thick):
             cv2.rectangle(img, a,b,color,thick)
@@ -309,7 +316,7 @@ class Bwindow():
             #----button shape
             a,b = self.getab()
             color,thick = self.color, self.thick
-            if self.over:
+            if self.hover:
                 color = (255,0,255)
             self.put_rect(img, a,b,color,thick)
             if self.pressed:
@@ -340,15 +347,10 @@ class Bwindow():
             if self.nocoll:
                 return False
             return abs(x-self.x) < self.w/2 and abs(y-self.y) < self.h/2
-        def click(self,x,y):
-            if self.coll(x,y):
-                self.pressed = not self.pressed
-        def unclick(self,x,y):
-            if self.coll(x,y):
-                if not self.hold:
-                    self.pressed = False
+        
         def move(self,x,y):
-            self.over = self.coll(x,y)
+            self.x = x
+            self.y = y
 
 class tnf(Bwindow):
     def __init__(self,message='yes or no'):
@@ -460,14 +462,11 @@ class sizer(Bwindow):
 
 
         #---------default buttons, fix button move.
-        for B in self.Blist:
-            B.fixed = True
         def buttonmove(self,x,y):
             for B in self.Blist:
                 if B.pressed and B.coll(x,y):
-                    if not 'fixed' in dir(B):
-                        B.x = x
-                        B.y = y
+                    if B.fixed == False:
+                        B.move(x,y)
         self.add_mmove( buttonmove )
 
         #---------- double click if want to see px,py.
@@ -486,7 +485,7 @@ class sizer(Bwindow):
         #lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         lorem = 'Yume Nijino Hime Shiratori Elza Forte Mahiru Kasumi Ako Saotome Laura Sakuraba Yozora Kasumi'
         texts = lorem.split(' ')
-        def addb(self,b):
+        def addnewb(self,b):
             w = b.w
             h = b.h
             pw = int(w/ self.w*10)
@@ -494,10 +493,10 @@ class sizer(Bwindow):
 
             text = texts.pop()
             #text = 'new B'
-            self.addB(5,5,pw,ph,text)
+            self.addB(5,5,pw,ph,text, fixed = False)
             self.add_lbdbl( text , prtxy )
             self.add_rbdown( text , delb )
-        self.add_lbdown( 'add B', addb )
+        self.add_lbdown( 'add B', addnewb )
 
         def delb(self,b):
             for B in self.Blist:
@@ -582,17 +581,10 @@ if __name__ =='__main__':
     #print(a.run())
     #a=manyB()
     #print(a.run())
-    #a=sizer()
-    #a.run()
-    a=painter()
-    impath = 'seno.jpg'
-    img = a.img_read(impath)
-    a.backimg(img)
+    a=sizer()
     a.run()
-
-# if __name__ =='__main__':
-#     winname = 'tnfwindow'
-#     a = tnfwindow(winname)
-#     a.addB(2,5,2,1,text = 'no')
-#     a.addB(8,5,2,1,text = 'yes')
-#     print(a.show())
+#     a=painter()
+#     impath = 'seno.jpg'
+#     img = a.img_read(impath)
+#     a.backimg(img)
+#     a.run()
